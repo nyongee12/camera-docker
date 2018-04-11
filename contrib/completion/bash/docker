@@ -1481,6 +1481,7 @@ _docker_container_run() {
 # and `_docker_container_create`
 _docker_container_run_and_create() {
 	local options_with_args="
+		--camera-type
 		--add-host
 		--attach -a
 		--blkio-weight

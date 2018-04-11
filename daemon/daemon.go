@@ -111,6 +111,9 @@ type Daemon struct {
 
 	seccompProfile     []byte
 	seccompProfilePath string
+	// FOR CAMERA
+	cameraDriver              string
+	cameraIPAddress           string
 }
 
 // HasExperimental returns whether the experimental features of the daemon are enabled or not
@@ -739,6 +742,43 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 	engineCpus.Set(float64(info.NCPU))
 	engineMemory.Set(float64(info.MemTotal))
 
+	// FOR CAMERA
+	d.cameraDriver = "camera-driver"
+	if d.Exists(d.cameraDriver) == false {
+		ccr, err := d.ContainerCreate(types.ContainerCreateConfig{
+			Name: d.cameraDriver,
+			Config: &containertypes.Config{
+				Image: "test",
+			},
+			HostConfig: nil,
+			NetworkingConfig: nil,
+		})
+		if err != nil {
+			return nil, err
+		}
+		logrus.Infof("[FOR CAMERA]: Container is created with ID %d", ccr.ID)
+
+	}
+	cameraContainer, err := d.GetContainer(d.cameraDriver)
+	if err != nil {
+		logrus.Errorf("[FOR CAMERA]: Cannot get Container")
+		return nil, err
+	}
+	cameraState := cameraContainer.StateString()
+	if cameraState == "running" {
+		logrus.Infof("[FOR CAMERA]: Container is already running")
+	} else {
+		d.containerStart(cameraContainer, "", "", true)
+		logrus.Infof("[FOR CAMERA]: Container starts!")
+	}
+	for _, network := range cameraContainer.NetworkSettings.Networks {
+		if network == nil || network.EndpointSettings == nil {
+			continue
+		}
+		d.cameraIPAddress = network.IPAddress
+	}
+	logrus.Infof("[FOR CAMERA]: Container IP: %s", d.cameraIPAddress)
+
 	return d, nil
 }
 
@@ -834,6 +874,13 @@ func (daemon *Daemon) Shutdown() error {
 				daemon.cleanupMountsByID(mountid)
 			}
 			logrus.Debugf("container stopped %s", c.ID)
+			// FOR CAMERA
+			if c.Name == daemon.cameraDriver {
+				logrus.Infof("[FOR CAMERA]: remove the container")
+				if err := daemon.ContainerRm(c.ID, &types.ContainerRmConfig{ForceRemove: true}); err != nil {
+					logrus.Errorf("[FOR CAMERA]: can't remove container %s: %v", c.Name, err)
+				}
+			}
 		})
 	}
 

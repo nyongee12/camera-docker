@@ -8,6 +8,9 @@ import (
 	"syscall"
 	"time"
 
+	// FOR CAMERA
+	"golang.org/x/net/context"
+
 	"google.golang.org/grpc"
 
 	"github.com/Sirupsen/logrus"
@@ -91,12 +94,48 @@ func (daemon *Daemon) Start(container *container.Container) error {
 	return daemon.containerStart(container, "", "", true)
 }
 
+// FOR CAMERA
+func (daemon *Daemon) startOneProcess(cmd []string, container *container.Container) error {
+	execConfig := &types.ExecConfig {
+		Cmd: cmd,
+	}
+
+	execID, err := daemon.ContainerExecCreate(container.ID, execConfig)
+	if err != nil {
+		logrus.Errorf("[FOR CAMERA]: error in ContainerExecCreate %v", err)
+	} else {
+		logrus.Infof("[FOR CAMERA]: ExecID: %s", execID)
+	}
+
+	if err := daemon.ContainerExecStart(context.Background(), execID, nil, nil, nil); err != nil {
+		logrus.Errorf("[FOR CAMERA]: error in ContainerExecStart %v", err)
+	} else {
+		logrus.Infof("[FOR CAMERA]: Exec Start")
+	}
+
+	return nil
+}
+
+func (daemon *Daemon) startPreprocess(container *container.Container) error {
+	// TODO: Add commands to move bin files and make them executable
+	// chmod +x /camera/install.sh
+	logrus.Info("[FOR CAMERA] Exec: chmod +x /camera/install.sh")
+	daemon.startOneProcess([]string {"chmod", "+x", "/camera/install.sh"}, container)
+	// sh /camera/install.sh
+	logrus.Info("[FOR CAMERA] Exec: sh /camera/install.sh")
+	daemon.startOneProcess([]string {"sh", "/camera/install.sh"}, container)
+
+	return nil
+}
+
+
 // containerStart prepares the container to run by setting up everything the
 // container needs, such as storage and networking, as well as links
 // between containers. The container is left waiting for a signal to
 // begin running.
 func (daemon *Daemon) containerStart(container *container.Container, checkpoint string, checkpointDir string, resetRestartManager bool) (err error) {
 	start := time.Now()
+	defer daemon.startPreprocess(container)
 	container.Lock()
 	defer container.Unlock()
 
@@ -107,6 +146,7 @@ func (daemon *Daemon) containerStart(container *container.Container, checkpoint 
 	if container.RemovalInProgress || container.Dead {
 		return fmt.Errorf("Container is marked for removal and cannot be started.")
 	}
+	logrus.Infof("[FOR CAMERA]: Container Start! in 112")
 
 	// if we encounter an error during start we need to ensure that any other
 	// setup has been cleaned up properly
@@ -132,6 +172,8 @@ func (daemon *Daemon) containerStart(container *container.Container, checkpoint 
 			}
 		}
 	}()
+
+	logrus.Infof("[FOR CAMERA]: Container Start! in 138")
 
 	if err := daemon.conditionalMountOnStart(container); err != nil {
 		return err
@@ -162,6 +204,7 @@ func (daemon *Daemon) containerStart(container *container.Container, checkpoint 
 	if daemon.saveApparmorConfig(container); err != nil {
 		return err
 	}
+	logrus.Infof("[FOR CAMERA]: Container Start! in 167")
 
 	if err := daemon.containerd.Create(container.ID, checkpoint, checkpointDir, *spec, container.InitializeStdio, createOptions...); err != nil {
 		errDesc := grpc.ErrorDesc(err)
@@ -192,6 +235,7 @@ func (daemon *Daemon) containerStart(container *container.Container, checkpoint 
 		return fmt.Errorf("%s", errDesc)
 	}
 
+	logrus.Infof("[FOR CAMERA]: Container Start!")
 	containerActions.WithValues("start").UpdateSince(start)
 
 	return nil

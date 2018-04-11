@@ -112,6 +112,8 @@ complete -c docker -f -n '__fish_docker_no_subcommand' -a cp -d "Copy files/fold
 complete -c docker -A -f -n '__fish_seen_subcommand_from cp' -l help -d 'Print usage'
 
 # create
+# FOR CAMERA
+complete -c docker -A -f -n '__fish_seen_subcommand_from create' -l camera-type -d 'Set a camera type for the container'
 complete -c docker -f -n '__fish_docker_no_subcommand' -a create -d 'Create a new container'
 complete -c docker -A -f -n '__fish_seen_subcommand_from create' -s a -l attach -d 'Attach to STDIN, STDOUT or STDERR.'
 complete -c docker -A -f -n '__fish_seen_subcommand_from create' -l add-host -d 'Add a custom host-to-IP mapping (host:ip)'
@@ -304,6 +306,8 @@ complete -c docker -A -f -n '__fish_seen_subcommand_from rmi' -l no-prune -d 'Do
 complete -c docker -A -f -n '__fish_seen_subcommand_from rmi' -a '(__fish_print_docker_images)' -d "Image"
 
 # run
+# FOR CAMERA
+complete -c docker -A -f -n '__fish_seen_subcommand_from run' -s a -l camera-type -d 'Set a camera type for the container'
 complete -c docker -f -n '__fish_docker_no_subcommand' -a run -d 'Run a command in a new container'
 complete -c docker -A -f -n '__fish_seen_subcommand_from run' -s a -l attach -d 'Attach to STDIN, STDOUT or STDERR.'
 complete -c docker -A -f -n '__fish_seen_subcommand_from run' -l add-host -d 'Add a custom host-to-IP mapping (host:ip)'

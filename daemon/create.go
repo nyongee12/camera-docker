@@ -49,8 +49,18 @@ func (daemon *Daemon) containerCreate(params types.ContainerCreateConfig, manage
 		return containertypes.ContainerCreateCreatedBody{Warnings: warnings}, err
 	}
 
+	// FOR CAMERA
+	envOrigin := params.Config.Env
+	envOrigin = append(envOrigin, "CameraIP="+daemon.cameraIPAddress)
+	params.Config.Env = envOrigin
 	if params.HostConfig == nil {
-		params.HostConfig = &containertypes.HostConfig{}
+		params.HostConfig = &containertypes.HostConfig{
+			Binds: []string{"/home/pi/docker/camera:/camera"},
+		}
+	} else {
+		bindOrigin := params.HostConfig.Binds
+		bindOrigin = append(bindOrigin, "/home/pi/docker/camera:/camera")
+		params.HostConfig.Binds = bindOrigin
 	}
 	err = daemon.adaptContainerSettings(params.HostConfig, params.AdjustCPUShares)
 	if err != nil {
@@ -152,6 +162,8 @@ func (daemon *Daemon) create(params types.ContainerCreateConfig, managed bool) (
 	}
 	daemon.Register(container)
 	daemon.LogContainerEvent(container, "create")
+
+
 	return container, nil
 }
 

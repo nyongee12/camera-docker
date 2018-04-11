@@ -94,13 +94,18 @@ func (d *Daemon) getActiveContainer(name string) (*container.Container, error) {
 
 // ContainerExecCreate sets up an exec in a running container.
 func (d *Daemon) ContainerExecCreate(name string, config *types.ExecConfig) (string, error) {
+	logrus.Infof("in daemon/exec line 97")
 	cntr, err := d.getActiveContainer(name)
 	if err != nil {
 		return "", err
 	}
 
+	logrus.Infof("in daemon/exec line 102")
+
 	cmd := strslice.StrSlice(config.Cmd)
+	logrus.Infof("in daemon/exec line 105")
 	entrypoint, args := d.getEntrypointAndArgs(strslice.StrSlice{}, cmd)
+	logrus.Infof("in daemon/exec line 107")
 
 	keys := []byte{}
 	if config.DetachKeys != "" {
@@ -110,6 +115,7 @@ func (d *Daemon) ContainerExecCreate(name string, config *types.ExecConfig) (str
 			return "", err
 		}
 	}
+	logrus.Infof("in daemon/exec line 117")
 
 	execConfig := exec.NewConfig()
 	execConfig.OpenStdin = config.AttachStdin
@@ -123,16 +129,20 @@ func (d *Daemon) ContainerExecCreate(name string, config *types.ExecConfig) (str
 	execConfig.Privileged = config.Privileged
 	execConfig.User = config.User
 
+	logrus.Infof("in daemon/exec line 131")
 	linkedEnv, err := d.setupLinkedContainers(cntr)
 	if err != nil {
 		return "", err
 	}
+	logrus.Infof("in daemon/exec line 136")
 	execConfig.Env = container.ReplaceOrAppendEnvValues(cntr.CreateDaemonEnvironment(config.Tty, linkedEnv), config.Env)
 	if len(execConfig.User) == 0 {
 		execConfig.User = cntr.Config.User
 	}
 
+	logrus.Infof("in daemon/exec line 142")
 	d.registerExecCommand(cntr, execConfig)
+	logrus.Infof("in daemon/exec line 144")
 
 	d.LogContainerEvent(cntr, "exec_create: "+execConfig.Entrypoint+" "+strings.Join(execConfig.Args, " "))
 

@@ -29,6 +29,8 @@ var (
 
 // containerOptions is a data object with all the options for creating a container
 type containerOptions struct {
+	// FOR CAMERA
+	cameraType         string
 	attach             opts.ListOpts
 	volumes            opts.ListOpts
 	tmpfs              opts.ListOpts
@@ -160,6 +162,8 @@ func addFlags(flags *pflag.FlagSet) *containerOptions {
 		volumesFrom:       opts.NewListOpts(nil),
 	}
 
+	// FOR CAMERA
+	flags.StringVar(&copts.cameraType, "camera-type", "", "Set a camera type for the container")
 	// General purpose flags
 	flags.VarP(&copts.attach, "attach", "a", "Attach to STDIN, STDOUT or STDERR")
 	flags.Var(&copts.deviceCgroupRules, "device-cgroup-rule", "Add a rule to the cgroup allowed devices list")
@@ -533,6 +537,8 @@ func parse(flags *pflag.FlagSet, copts *containerOptions) (*containerConfig, err
 	}
 
 	config := &container.Config{
+		// FOR CAMERA
+		CameraType:   copts.cameraType,
 		Hostname:     copts.hostname,
 		ExposedPorts: ports,
 		User:         copts.user,
