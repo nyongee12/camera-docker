@@ -745,12 +745,23 @@ func NewDaemon(config *config.Config, registryService registry.Service, containe
 	// FOR CAMERA
 	d.cameraDriver = "camera-driver"
 	if d.Exists(d.cameraDriver) == false {
+		resources := &containertypes.Resources {}
+		devices := resources.Devices
+		devices = append(devices, containertypes.DeviceMapping {
+			PathOnHost: "/dev/vchiq",
+			PathInContainer: "/dev/vchiq",
+			CgroupPermissions: "rwm",
+		})
+		resources.Devices = devices
+		hostConfig := &containertypes.HostConfig{}
+		hostConfig.Resources = *resources
+
 		ccr, err := d.ContainerCreate(types.ContainerCreateConfig{
 			Name: d.cameraDriver,
 			Config: &containertypes.Config{
 				Image: "test",
 			},
-			HostConfig: nil,
+			HostConfig: hostConfig,
 			NetworkingConfig: nil,
 		})
 		if err != nil {
